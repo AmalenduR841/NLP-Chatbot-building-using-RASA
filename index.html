@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rasa Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+    
+      body {
+          font-family: 'Poppins', sans-serif;
+          background-color: #f7f7f7;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+      }
+
+      .chat-container {
+          border: 1px solid #ccc;
+          box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+          width: 300px;
+          max-width: 100%;
+          background-color: white;
+          border-radius: 5px;
+          overflow: hidden;
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+
+      }
+
+      .chat-header {
+          background-color: #007bff;
+          color: white;
+          padding: 10px;
+          text-align: center;
+          font-size: 14px; 
+      }
+
+      .chat-messages {
+          padding: 10px;
+          max-height: 300px;
+          overflow-y: auto;
+      }
+
+      .message {
+          margin-bottom: 10px;
+          padding: 5px 10px;
+          border-radius: 5px;
+      }
+
+      .user-message {
+          background-color: white;
+          color: rgb(75, 3, 3);
+          align-self: flex-end;
+          font-size: 12px; 
+      }
+
+      .bot-message {
+          background-color: white;
+          color: blue;
+          align-self: flex-start;
+          font-size: 12px; 
+      }
+
+      .user-input {
+          border: none;
+          padding: 12px;
+          width: 100%;
+          border-radius: 5px 0 0 5px;
+      }
+
+      .send-button {
+          background-color: #007bff;
+          color: white;
+          border: none;
+          padding: 10px;
+          border-radius: 0 5px 5px 0;
+          cursor: pointer;
+      }
+  </style>
+</head>
+<body>
+    <div class="chat-container">
+      <div class="chat-header">
+          Udemy Bot
+      </div>
+      <div class="chat-messages" id="messages"></div>
+      <div class="user-input">
+          <input type="text" id="user-input" placeholder="Type your message...">
+      </div>
+      <button class="send-button" id="send-button">Send</button>
+  </div>
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+
+        // Function to add messages to the chat
+        function addMessage(message, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isUser ? 'user-message' : 'bot-message';
+            messageDiv.innerHTML = message;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // Function to send user messages to Rasa
+        function sendMessage() {
+            const userMessage = userInput.value;
+            addMessage( userMessage, true);
+            
+            // Send user message to Rasa server
+            fetch('http://localhost:5005/webhooks/rest/webhook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender: 'user',
+                    message: userMessage
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("data: ",data)
+                for (const responseObj of data) {
+                    console.log("resp: ",responseObj)
+                    const botResponse = responseObj.text
+                    addMessage(botResponse, false);
+                }
+                
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+            });
+
+            userInput.value = '';
+        }
+
+        // Event listener for send button click
+        sendButton.addEventListener('click', sendMessage);
+
+        // Event listener for Enter key press
+        userInput.addEventListener('keyup', event => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+
+
+</body>
+</html>
+
